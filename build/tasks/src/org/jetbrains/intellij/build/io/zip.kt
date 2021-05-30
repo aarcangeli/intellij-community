@@ -144,17 +144,8 @@ private fun compressDir(startDir: Path, archiver: ZipArchiver, logger: System.Lo
 
     tempList.sort()
     for (file in tempList) {
-      val fileName = file.fileName.toString()
-
-      val isFile: Boolean
-      val lastDot = fileName.lastIndexOf('.')
-      if (lastDot == -1) {
-        isFile = fileName.endsWith("LICENSE")
-      }
-      else {
-        // foo-1.2.3 is a directory
-        isFile = lastDot < fileName.length && fileName[lastDot + 1] >= 'A' && !fileName.endsWith("for_twisted") && fileName != ".github"
-      }
+      // ROMOLO FIX - a file is a file when is not a directory
+      val isFile = !Files.isDirectory(file)
 
       if (isFile) {
         try {
