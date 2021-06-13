@@ -91,11 +91,15 @@ public class OpenProjectFileChooserDescriptor extends FileChooserDescriptor {
   }
 
   private static boolean isIprFile(VirtualFile file) {
-    return ProjectFileType.DEFAULT_EXTENSION.equalsIgnoreCase(file.getExtension());
+    // ROMOLO: "*.ipr" files must not be opened as a "project"
+    // return ProjectFileType.DEFAULT_EXTENSION.equalsIgnoreCase(file.getExtension());
+    return false;
   }
 
   private static boolean isIdeaDirectory(VirtualFile file) {
-    return ProjectKt.getProjectStoreDirectory(file) != null;
+    // ROMOLO: ".idea" must not be opened as a "project"
+    // return ProjectKt.getProjectStoreDirectory(file) != null;
+    return false;
   }
 
   private static boolean hasImportProvider(VirtualFile file) {

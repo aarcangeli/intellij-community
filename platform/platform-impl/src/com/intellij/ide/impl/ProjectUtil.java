@@ -693,6 +693,17 @@ public final class ProjectUtil extends ProjectUtilCore {
           return null;
         }
       }
+
+      // ROMOLO fix: if a open project processor is available for the specified file, and it returned null in openOrImport, skip temporaney project creation
+      NullableLazyValue<VirtualFile> lazyVirtualFile = NullableLazyValue.createValue(() -> getFileAndRefresh(file));
+      for (ProjectOpenProcessor provider : ProjectOpenProcessor.EXTENSION_POINT_NAME.getIterable()) {
+        if (!(provider instanceof PlatformProjectOpenProcessor)) {
+          VirtualFile virtualFile = lazyVirtualFile.getValue();
+          if (virtualFile != null && provider.canOpenProject(virtualFile)) {
+            return null;
+          }
+        }
+      }
     }
     catch (ProcessCanceledException ex) {
       LOG.debug(location + ": skip project opening");
