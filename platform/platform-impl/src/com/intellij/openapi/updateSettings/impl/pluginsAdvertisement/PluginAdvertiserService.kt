@@ -30,6 +30,9 @@ import kotlin.collections.set
 open class PluginAdvertiserService {
   @Throws(IOException::class)
   fun run(project: Project) {
+    // ROMOLO: never suggest plugin or ultimate
+    if ("".isEmpty()) return;
+
     val unknownFeatures = UnknownFeaturesCollector.getInstance(project).unknownFeatures
     val extensions = PluginsAdvertiser.loadExtensions()
     if (extensions != null && unknownFeatures.isEmpty())

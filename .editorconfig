@@ -1,7 +1,8 @@
 root = true
 
 [*]
-end_of_line = lf
+# ROMOLO: line separator should be CRLF on windows and lf on linux
+end_of_line = unset
 indent_style = space
 indent_size = 2
 ij_continuation_indent_size = 2
