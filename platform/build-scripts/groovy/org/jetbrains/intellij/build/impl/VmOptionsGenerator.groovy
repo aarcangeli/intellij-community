@@ -23,7 +23,7 @@ final class VmOptionsGenerator {
 
   static final List<Map.Entry<String, String>> MEMORY_OPTIONS = List.of(
     Map.entry('-Xms', '128m'),
-    Map.entry('-Xmx', '750m'),
+    Map.entry('-Xmx', 'Xmx4000m'),
     Map.entry('-XX:ReservedCodeCacheSize=', '512m'))
 
   static List<String> computeVmOptions(boolean isEAP, ProductProperties productProperties) {
