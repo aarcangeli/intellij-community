@@ -43,7 +43,8 @@ final class VmOptionsGenerator {
       // when changing, please review usages of `ProductProperties#getCustomJvmMemoryOptionsX64` and synchronize if necessary
       case JvmArchitecture.x64:
       case JvmArchitecture.aarch64:
-        return productProperties.customJvmMemoryOptionsX64?.split(' ')?.toList() ?: ['-Xms128m', '-Xmx750m', defaultCodeCacheSetting]
+        // ROMOLO: increase maximum heap size from -Xmx750m
+        return productProperties.customJvmMemoryOptionsX64?.split(' ')?.toList() ?: ['-Xms128m', '-Xmx4000m', defaultCodeCacheSetting]
       default:
         throw new AssertionError(arch)
     }
