@@ -23,6 +23,8 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -212,7 +214,7 @@ public class FileChooserDialogImpl extends DialogWrapper implements FileChooserD
       toolbarPanel.add(extraToolbarPanel, BorderLayout.SOUTH);
     }
 
-    myPath = new ComboBox<>(FileChooserUtil.getRecentPaths().toArray(ArrayUtilRt.EMPTY_STRING_ARRAY));
+    myPath = new ComboBox<>(FileChooserUtil.getRecentPaths().stream().map(FileUtil::toSystemDependentName).toArray(String[]::new));
     myPath.setEditable(true);
     myPath.setRenderer(SimpleListCellRenderer.create((var label, @NlsContexts.Label var value, var index) -> {
       label.setText(value);
