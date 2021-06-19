@@ -3,6 +3,7 @@ package com.intellij.ui;
 
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,9 @@ public class RecentsManager implements PersistentStateComponent<Element> {
 
   @Nullable
   public List<String> getRecentEntries(@NotNull String key) {
+    // ROMOLO BEGIN - convert all elements since the values can be edited externally
+    myMap.get(key).replaceAll(FileUtil::toSystemDependentName);
+    // ROMOLO END
     return myMap.get(key);
   }
 
@@ -42,7 +46,10 @@ public class RecentsManager implements PersistentStateComponent<Element> {
     add(recents, recentEntry);
   }
 
-  private void add(final LinkedList<? super String> recentEntries, final String newEntry) {
+  private void add(final LinkedList<? super String> recentEntries, String newEntry) {
+    // ROMOLO BEGIN - always store system dependent paths
+    newEntry = FileUtil.toSystemDependentName(newEntry);
+    // ROMOLO END
     final int oldIndex = recentEntries.indexOf(newEntry);
     if (oldIndex >= 0) {
       recentEntries.remove(oldIndex);
@@ -60,7 +67,12 @@ public class RecentsManager implements PersistentStateComponent<Element> {
     for (Element keyElement : element.getChildren(KEY_ELEMENT_NAME)) {
       LinkedList<String> recents = new LinkedList<>();
       for (Element aChildren : keyElement.getChildren(RECENT_ELEMENT_NAME)) {
-        recents.addLast(aChildren.getAttributeValue(NAME_ATTR));
+        // ROMOLO BEGIN - load with system dependent path
+        String value = aChildren.getAttributeValue(NAME_ATTR);
+        if (value != null) {
+          recents.addLast(FileUtil.toSystemDependentName(value));
+        }
+        // ROMOLO END
       }
 
       myMap.put(keyElement.getAttributeValue(NAME_ATTR), recents);
@@ -74,7 +86,9 @@ public class RecentsManager implements PersistentStateComponent<Element> {
       Element keyElement = new Element(KEY_ELEMENT_NAME);
       keyElement.setAttribute(NAME_ATTR, entry.getKey());
       for (String recent : entry.getValue()) {
-        keyElement.addContent(new Element(RECENT_ELEMENT_NAME).setAttribute(NAME_ATTR, recent));
+        // ROMOLO BEGIN - get state with system indipendent path
+        keyElement.addContent(new Element(RECENT_ELEMENT_NAME).setAttribute(NAME_ATTR, FileUtil.toSystemIndependentName(recent)));
+        // ROMOLO END
       }
       element.addContent(keyElement);
     }
