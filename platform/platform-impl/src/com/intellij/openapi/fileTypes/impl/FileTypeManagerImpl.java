@@ -64,9 +64,10 @@ public class FileTypeManagerImpl extends FileTypeManagerEx implements Persistent
   // You must update all existing default configurations accordingly
   static final int VERSION = 18;
 
+  // ROMOLO CUSTOMIZATION: added ".romolo" path
   // must be sorted
   @SuppressWarnings("SpellCheckingInspection")
-  static final String DEFAULT_IGNORED = "*.pyc;*.pyo;*.rbc;*.yarb;*~;.DS_Store;.git;.hg;.svn;CVS;__pycache__;_svn;vssver.scc;vssver2.scc";
+  static final String DEFAULT_IGNORED = "*.pyc;*.pyo;*.rbc;*.yarb;*~;.DS_Store;.git;.hg;.romolo;.svn;CVS;__pycache__;_svn;vssver.scc;vssver2.scc";
 
   static final String FILE_SPEC = "filetypes";
   private static final String ELEMENT_EXTENSION_MAP = "extensionMap";
