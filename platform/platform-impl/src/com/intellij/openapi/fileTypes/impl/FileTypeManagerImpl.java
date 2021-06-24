@@ -67,9 +67,10 @@ public class FileTypeManagerImpl extends FileTypeManagerEx implements Persistent
   private static final int VERSION = 18;
   private static final ThreadLocal<Pair<VirtualFile, FileType>> FILE_TYPE_FIXED_TEMPORARILY = new ThreadLocal<>();
 
+  // ROMOLO CUSTOMIZATION: added ".romolo" path
   // must be sorted
   @SuppressWarnings("SpellCheckingInspection")
-  static final String DEFAULT_IGNORED = "*.pyc;*.pyo;*.rbc;*.yarb;*~;.DS_Store;.git;.hg;.svn;CVS;__pycache__;_svn;vssver.scc;vssver2.scc;";
+  static final String DEFAULT_IGNORED = "*.pyc;*.pyo;*.rbc;*.yarb;*~;.DS_Store;.git;.hg;.romolo;.svn;CVS;__pycache__;_svn;vssver.scc;vssver2.scc;";
   @NonNls private static final String ELEMENT_EXTENSION_MAP = "extensionMap";
 
   private final Set<FileType> myDefaultTypes = CollectionFactory.createSmallMemoryFootprintSet();
