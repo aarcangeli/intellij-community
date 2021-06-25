@@ -7,6 +7,8 @@ import com.intellij.ide.lightEdit.LightEdit;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -18,6 +20,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.impl.http.HttpVirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
@@ -167,6 +170,18 @@ public class JsonSchemaServiceImpl implements JsonSchemaService, ModificationTra
 
   @NotNull
   public Collection<VirtualFile> getSchemasForFile(@NotNull VirtualFile file, boolean single, boolean onlyUserSchemas) {
+    // ROMOLO EDIT: use custom schema for json files
+    FileType fileType = file.getFileType();
+    if (fileType instanceof LanguageFileType) {
+      Language language = ((LanguageFileType) fileType).getLanguage();
+      if (language instanceof JsonLanguage) {
+        VirtualFile schemaFile = ((JsonLanguage) language).getSchemaFile(myProject, file);
+        if (schemaFile != null) {
+          return Collections.singletonList(schemaFile);
+        }
+      }
+    }
+
     String schemaUrl = null;
     if (!onlyUserSchemas) {
       // prefer schema-schema if it is specified in "$schema" property
