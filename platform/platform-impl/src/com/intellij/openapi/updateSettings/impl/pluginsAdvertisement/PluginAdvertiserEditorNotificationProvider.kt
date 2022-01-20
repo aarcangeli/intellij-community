@@ -35,6 +35,9 @@ class PluginAdvertiserEditorNotificationProvider : EditorNotificationProvider,
     project: Project,
     file: VirtualFile,
   ): Function<in FileEditor, out JComponent?> {
+    // ROMOLO: never suggest plugin or ultimate
+    if ("".isEmpty()) return EditorNotificationProvider.CONST_NULL
+
     val suggestionData = getSuggestionData(project, ApplicationInfo.getInstance().build.productCode, file.name, file.fileType)
 
     if (suggestionData == null) {
