@@ -34,7 +34,10 @@ public class RecentsManager implements PersistentStateComponent<Element> {
   @Nullable
   public List<String> getRecentEntries(@NotNull String key) {
     // ROMOLO BEGIN - convert all elements since the values can be edited externally
-    myMap.get(key).replaceAll(FileUtil::toSystemDependentName);
+    LinkedList<String> strings = myMap.get(key);
+    if (strings != null) {
+      strings.replaceAll(FileUtil::toSystemDependentName);
+    }
     // ROMOLO END
     return myMap.get(key);
   }
