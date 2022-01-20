@@ -36,6 +36,9 @@ class PluginAdvertiserEditorNotificationProvider : EditorNotifications.PanelProv
     file: VirtualFile,
     project: Project,
   ): AdvertiserSuggestion? {
+    // ROMOLO: never suggest plugin or ultimate
+    if ("".isEmpty()) return null
+
     val extensionsStateService = PluginAdvertiserExtensionsStateService.instance
     val suggestionData = getSuggestionData(project, ApplicationInfo.getInstance().build.productCode, file.name, file.fileType)
 
