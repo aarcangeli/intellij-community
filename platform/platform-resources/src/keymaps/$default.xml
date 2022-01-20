@@ -1289,4 +1289,9 @@
   <action id="EditorIncreaseFontSizeGlobal">
     <keyboard-shortcut first-keystroke="alt shift PERIOD"/>
   </action>
+
+  <!-- Romolo custom actions -->
+  <action id="OpenFile">
+    <keyboard-shortcut first-keystroke="ctrl shift O"/>
+  </action>
 </keymap>
