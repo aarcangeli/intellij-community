@@ -363,7 +363,7 @@
     <keyboard-shortcut first-keystroke="control shift F11"/>
   </action>
   <action id="HighlightUsagesInFile">
-    <keyboard-shortcut first-keystroke="control shift F7"/> 
+    <keyboard-shortcut first-keystroke="control shift F7"/>
   </action>
   <action id="GotoFile">
     <keyboard-shortcut first-keystroke="control shift N"/>
@@ -1265,5 +1265,10 @@
   </action>
   <action id="ActivateNuGetToolWindow">
     <keyboard-shortcut first-keystroke="alt shift 7"/>
+  </action>
+
+  <!-- Romolo custom actions -->
+  <action id="OpenFile">
+    <keyboard-shortcut first-keystroke="ctrl shift O"/>
   </action>
 </keymap>
