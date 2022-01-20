@@ -3,22 +3,23 @@ package com.intellij.configurationStore
 
 import com.intellij.ide.highlighter.ProjectFileType
 import com.intellij.ide.highlighter.WorkspaceFileType
+import com.intellij.ide.impl.ProjectUtilCore
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.appSystemDir
 import com.intellij.openapi.components.*
 import com.intellij.openapi.components.impl.stores.IProjectStore
 import com.intellij.openapi.diagnostic.runAndLogException
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectCoreUtil
-import com.intellij.openapi.project.doGetProjectFileName
+import com.intellij.openapi.project.*
 import com.intellij.openapi.project.ex.ProjectEx
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.SmartList
 import com.intellij.util.containers.isNullOrEmpty
 import com.intellij.util.io.Ksuid
 import com.intellij.util.io.exists
+import com.intellij.util.io.isDirectory
 import com.intellij.util.io.systemIndependentPath
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.text.nullize
@@ -36,6 +37,10 @@ private val DEPRECATED_PROJECT_FILE_STORAGE_ANNOTATION = FileStorageAnnotation(P
 abstract class ProjectStoreBase(final override val project: Project) : ComponentStoreWithExtraComponents(), IProjectStore {
   private var dirOrFile: Path? = null
   private var dotIdea: Path? = null
+
+  // romolo edits
+  private val IS_ROMOLO_IDE = true
+  private var myBasePath: Path? = null
 
   internal fun getNameFile(): Path = directoryStorePath!!.resolve(ProjectEx.NAME_FILE)
 
@@ -82,6 +87,11 @@ abstract class ProjectStoreBase(final override val project: Project) : Component
   }
 
   final override fun getProjectBasePath(): Path {
+    // ROMOLO EDIT
+    if (IS_ROMOLO_IDE) {
+      return myBasePath!!
+    }
+
     val path = dirOrFile ?: throw IllegalStateException("setPath was not yet called")
     if (isDirectoryBased) {
       val useParent = System.getProperty("store.basedir.parent.detection", "true").toBoolean() &&
@@ -94,6 +104,11 @@ abstract class ProjectStoreBase(final override val project: Project) : Component
   }
 
   override fun getPresentableUrl(): String {
+    // ROMOLO EDIT
+    if (IS_ROMOLO_IDE) {
+      return FileUtil.toSystemDependentName(dirOrFile!!.toFile().absolutePath)
+    }
+
     if (isDirectoryBased) {
       return (dirOrFile ?: throw IllegalStateException("setPath was not yet called")).systemIndependentPath
     }
@@ -107,10 +122,15 @@ abstract class ProjectStoreBase(final override val project: Project) : Component
   override fun setPath(file: Path, isRefreshVfsNeeded: Boolean, template: Project?) {
     dirOrFile = file
 
+    // ROMOLO EDIT: generate base path
+    if (IS_ROMOLO_IDE) {
+      myBasePath = if (file.isDirectory()) file else file.parent
+    }
+
     val storageManager = storageManager
     val isUnitTestMode = ApplicationManager.getApplication().isUnitTestMode
     val macros = ArrayList<Macro>(5)
-    if (file.toString().endsWith(ProjectFileType.DOT_DEFAULT_EXTENSION)) {
+    if (!IS_ROMOLO_IDE && file.toString().endsWith(ProjectFileType.DOT_DEFAULT_EXTENSION)) {
       macros.add(Macro(PROJECT_FILE, file))
 
       val workspacePath = file.parent.resolve("${file.fileName.toString().removeSuffix(ProjectFileType.DOT_DEFAULT_EXTENSION)}${WorkspaceFileType.DOT_DEFAULT_EXTENSION}")
@@ -129,7 +149,8 @@ abstract class ProjectStoreBase(final override val project: Project) : Component
       }
     }
     else {
-      val dotIdea = file.resolve(Project.DIRECTORY_STORE_FOLDER)
+      // ROMOLO EDIT: move ".idea" directory out of project path
+      val dotIdea = if (IS_ROMOLO_IDE) ProjectUtilCore.getRomoloProjectPath(file).resolve(Project.DIRECTORY_STORE_FOLDER) else file.resolve(Project.DIRECTORY_STORE_FOLDER)
       this.dotIdea = dotIdea
 
       // PROJECT_CONFIG_DIR must be first macro
