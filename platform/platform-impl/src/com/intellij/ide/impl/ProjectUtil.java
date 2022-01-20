@@ -591,6 +591,12 @@ public final class ProjectUtil extends ProjectUtilCore {
     IProjectStore projectStore = ProjectKt.getStateStore(project);
     Path existingBaseDirPath = projectStore.getProjectBasePath();
 
+    // ROMOLO FIX: if two projects has the same project path, they are the same.
+    // This may be different on other JetBrains IDEs.
+    if (projectFile.equals(projectStore.getProjectPath())) {
+      return true;
+    }
+
     if (existingBaseDirPath.getFileSystem() != projectFile.getFileSystem()) {
       return false;
     }

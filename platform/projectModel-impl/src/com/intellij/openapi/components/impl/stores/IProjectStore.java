@@ -52,4 +52,11 @@ public interface IProjectStore extends IComponentStore {
   void setPath(@NotNull Path path, boolean isRefreshVfsNeeded, @Nullable Project template);
 
   @Nullable String getProjectWorkspaceId();
+
+  /**
+   * ROMOLO EDIT
+   * Returns the project path, it can be a directory or a file depending on the project type.
+   * Eg: "something.uproject" for Unreal Engine, "CMakeLists.txt" for cmake.
+   */
+  @NotNull Path getProjectPath();
 }
