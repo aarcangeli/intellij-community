@@ -25,6 +25,9 @@ public class ProjectUtilCore {
   }
 
   public static boolean isValidProjectPath(@NotNull Path file) {
+    if (!Files.exists(file)) {
+      return false;
+    }
     file = getRomoloProjectPath(file);
     return Files.isDirectory(file.resolve(Project.DIRECTORY_STORE_FOLDER)) ||
            (Strings.endsWith(file.toString(), ProjectFileType.DOT_DEFAULT_EXTENSION) && Files.isRegularFile(file));

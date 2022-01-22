@@ -65,7 +65,8 @@ open class ProjectStoreImpl(project: Project) : ProjectStoreBase(project) {
     for (projectNameProvider in ProjectNameProvider.EP_NAME.iterable) {
       LOG.runAndLogException { projectNameProvider.getDefaultName(project)?.let { return it } }
     }
-    return JpsPathUtil.getDefaultProjectName(projectDir)
+    // ROMOLO EDIT: use base path as name
+    return projectBasePath.fileName?.toString() ?: JpsPathUtil.getDefaultProjectName(projectDir)
   }
 
   private suspend fun saveProjectName() {
