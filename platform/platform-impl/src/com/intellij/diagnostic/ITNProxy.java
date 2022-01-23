@@ -51,6 +51,8 @@ final class ITNProxy {
   private static final String NEW_THREAD_POST_URL = "https://ea-report.jetbrains.com/trackerRpc/idea/createScr";
   private static final String NEW_THREAD_VIEW_URL = "https://ea.jetbrains.com/browser/ea_reports/";
 
+  private final static boolean IS_ROMOLO = true;
+
   private static final NotNullLazyValue<Map<String, String>> TEMPLATE =
     NotNullLazyValue.atomicLazy(() -> {
       Map<String, String> template = new LinkedHashMap<>();
@@ -89,6 +91,11 @@ final class ITNProxy {
   }
 
   static @NotNull List<Developer> fetchDevelopers(@NotNull ProgressIndicator indicator) throws IOException {
+    // ROMOLO EDIT: disabled on this ide
+    if (IS_ROMOLO) {
+      return Collections.emptyList();
+    }
+
     return HttpRequests.request(DEVELOPERS_LIST_URL).connectTimeout(3000).connect(request -> {
       List<Developer> developers = new ArrayList<>();
       developers.add(Developer.NULL);
@@ -162,6 +169,11 @@ final class ITNProxy {
   private static SSLContext ourSslContext;
 
   private static int postNewThread(String login, String password, ErrorBean error) throws Exception {
+    // ROMOLO EDIT: disabled on this ide
+    if (IS_ROMOLO) {
+      throw new InternalEAPException("Not permitted here");
+    }
+
     if (ourSslContext == null) {
       ourSslContext = initContext();
     }
