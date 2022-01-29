@@ -5,6 +5,7 @@ import com.intellij.application.options.colors.fileStatus.FileStatusColorsConfig
 import com.intellij.openapi.extensions.BaseExtensionPointName;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurableEP;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.options.ex.SortedConfigurableGroup;
 import com.intellij.openapi.project.Project;
@@ -19,6 +20,7 @@ import com.intellij.openapi.vcs.impl.VcsEP;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,6 +34,7 @@ public final class VcsManagerConfigurable extends SortedConfigurableGroup implem
   private static final int GROUP_WEIGHT = 45;
 
   @NotNull private final Project myProject;
+  private Configurable myDelegate;
 
   public VcsManagerConfigurable(@NotNull Project project) {
     super(ID,
@@ -49,12 +52,66 @@ public final class VcsManagerConfigurable extends SortedConfigurableGroup implem
     );
   }
 
+  // ROMOLO EDIT: mapping configurable should be the root
+  @Override
+  public JComponent createComponent() {
+    myDelegate = new VcsMappingConfigurable(myProject);
+    return myDelegate.createComponent();
+  }
+
+  @Override
+  public boolean hasOwnContent() {
+    return true;
+  }
+
+  @Override
+  public boolean isModified() {
+    return myDelegate != null && myDelegate.isModified();
+  }
+
+  @Override
+  public void apply() throws ConfigurationException {
+    super.apply();
+    myDelegate.apply();
+  }
+
+  @Override
+  public void reset() {
+    super.reset();
+    myDelegate.reset();
+  }
+
+  @Override
+  public void disposeUIResources() {
+    super.disposeUIResources();
+    if (myDelegate != null) {
+      myDelegate.disposeUIResources();
+      myDelegate = null;
+    }
+  }
+
+  @Override
+  public String getDisplayName() {
+    return VcsBundle.message("version.control.main.configurable.name");
+  }
+
+  @Override
+  @NotNull
+  public String getHelpTopic() {
+    return "project.propVCSSupport.Mappings";
+  }
+
+  @Override
+  @NotNull
+  public String getId() {
+    return getHelpTopic();
+  }
+
   @Override
   protected Configurable[] buildConfigurables() {
     List<Configurable> result = new ArrayList<>();
 
     result.add(new VcsGeneralSettingsConfigurable(myProject));
-    result.add(new VcsMappingConfigurable(myProject));
     if (Registry.is("vcs.ignorefile.generation", true)) {
       result.add(new IgnoredSettingsPanel(myProject));
     }
