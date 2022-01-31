@@ -26,6 +26,9 @@ public class EditorSettingsManager implements EditorFactoryListener {
 
   @Override
   public void editorCreated(@NotNull EditorFactoryEvent event) {
+    // ROMOLO FIX
+    if (Utils.isFullIntellijSettingsSupport()) return;
+
     if (ApplicationManager.getApplication().isUnitTestMode()) return;
     applyEditorSettings(event.getEditor());
   }
@@ -37,6 +40,9 @@ public class EditorSettingsManager implements EditorFactoryListener {
     Project project = editor.getProject();
     if (project == null) return;
     if (!Utils.isEnabled(CodeStyle.getSettings(project))) return;
+
+    // ROMOLO FIX
+    if (Utils.isFullIntellijSettingsSupport()) return;
 
     List<EditorConfig.OutPair> outPairs = SettingsProviderComponent.getInstance().getOutPairs(project, file);
     String maxLineLength = Utils.configValueForKey(outPairs, maxLineLengthKey);

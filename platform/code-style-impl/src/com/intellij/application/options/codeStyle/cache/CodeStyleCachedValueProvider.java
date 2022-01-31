@@ -90,11 +90,12 @@ final class CodeStyleCachedValueProvider implements CachedValueProvider<CodeStyl
 
   Object @NotNull [] getDependencies(@NotNull CodeStyleSettings settings, @NotNull AsyncComputation computation) {
     List<Object> dependencies = new ArrayList<>();
-    if (settings instanceof TransientCodeStyleSettings) {
-      dependencies.addAll(((TransientCodeStyleSettings)settings).getDependencies());
-    }
-    else {
+    // ROMOLO FIX
+    if (!(settings instanceof TransientCodeStyleSettings)) {
       dependencies.add(settings.getModificationTracker());
+    }
+    if (myComputation.myResultDependencies != null) {
+      dependencies.addAll(myComputation.myResultDependencies);
     }
     dependencies.add(computation.getTracker());
     return ArrayUtil.toObjectArray(dependencies);
@@ -120,6 +121,9 @@ final class CodeStyleCachedValueProvider implements CachedValueProvider<CodeStyl
     private final             List<Runnable>            myScheduledRunnables = new ArrayList<>();
     private                   long                      myOldTrackerSetting;
     private                   boolean                   myInsideRestartedComputation = false;
+
+    // ROMOLO FIX
+    private volatile List<Object> myResultDependencies;
 
     private AsyncComputation(@NotNull Project project) {
       myProject = project;
@@ -198,6 +202,9 @@ final class CodeStyleCachedValueProvider implements CachedValueProvider<CodeStyl
             LOG.debug("Created TransientCodeStyleSettings for " + file.getName() + ", tab size " + modifiableSettings.getIndentOptionsByFile(file).TAB_SIZE);
           }
 
+          // ROMOLO FIX
+          myResultDependencies = null;
+
           for (CodeStyleSettingsModifier modifier : CodeStyleSettingsModifier.EP_NAME.getExtensionList()) {
             if (modifier.modifySettings(modifiableSettings, file)) {
               LOG.debug("Modifier: " + modifier.getClass().getName());
@@ -206,8 +213,11 @@ final class CodeStyleCachedValueProvider implements CachedValueProvider<CodeStyl
               break;
             }
           }
+
+          // ROMOLO FIX
+          myResultDependencies = modifiableSettings.getDependencies();
         }
-        if (myCurrResult != currSettings) {
+        if (myCurrResult != currSettings || myResultDependencies.size() > 0) {
           myCurrResult = currSettings;
           myTracker.incModificationCount();
         }
