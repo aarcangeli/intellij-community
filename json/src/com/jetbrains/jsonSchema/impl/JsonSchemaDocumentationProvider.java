@@ -189,7 +189,11 @@ public class JsonSchemaDocumentationProvider implements DocumentationProvider {
       return plainTextPostProcess(title);
     } else if (!StringUtil.isEmptyOrSpaces(htmlDescription)) {
       String desc = htmlDescription;
-      if (!StringUtil.isEmptyOrSpaces(title)) desc = plainTextPostProcess(title) + "<br/>" + desc;
+      // ROMOLO EDIT: don't show title on clang format documentation
+      VirtualFile rawFile = schema.getRawFile();
+      if (rawFile == null || !rawFile.getUrl().equals("mock:///clangFormat-options.json")) {
+        if (!StringUtil.isEmptyOrSpaces(title)) desc = plainTextPostProcess(title) + "<br/>" + desc;
+      }
       return desc;
     } else if (!StringUtil.isEmptyOrSpaces(description)) {
       String desc = plainTextPostProcess(description);
