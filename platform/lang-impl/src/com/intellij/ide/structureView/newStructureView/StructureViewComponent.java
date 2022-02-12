@@ -459,7 +459,8 @@ public class StructureViewComponent extends SimpleToolWindowPanel implements Tre
 
     cancelScrollToSelectedElement();
     myAutoscrollAlarm.cancelAllRequests();
-    myAutoscrollAlarm.addRequest(this::scrollToSelectedElementLater, 1000);
+    // ROMOLO EDIT: change from 1000 ms
+    myAutoscrollAlarm.addRequest(this::scrollToSelectedElementLater, 100);
   }
 
   private void cancelScrollToSelectedElement() {
