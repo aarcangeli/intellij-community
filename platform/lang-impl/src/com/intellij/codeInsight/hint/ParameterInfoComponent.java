@@ -356,7 +356,8 @@ public class ParameterInfoComponent extends JPanel {
     }
 
     var project = myEditor.getProject();
-    myDumbLabel.setVisible(project != null && DumbService.isDumb(project));
+    // ROMOLO EDIT: show warning only if ParameterInfoHandler is not dumb aware
+    myDumbLabel.setVisible(project != null && DumbService.isDumb(project) && !DumbService.isDumbAware(myParameterInfoControllerData.getHandler()));
 
     return context.result;
   }

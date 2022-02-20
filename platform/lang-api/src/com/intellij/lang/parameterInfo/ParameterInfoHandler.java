@@ -34,6 +34,7 @@ import java.awt.*;
  * ({@link #showParameterInfo(Object, CreateParameterInfoContext)});
  */
 public interface ParameterInfoHandler <ParameterOwner extends Object & PsiElement, ParameterType> {
+  // ROMOLO EDIT: if dumb aware, the component show the message "Results might be incomplete during indexing"
 
   /**
    * <p>Find psiElement for parameter info should also set ItemsToShow in context and may set highlighted element</p>
