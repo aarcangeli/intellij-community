@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-
+// ROMOLO EDIT: if dumb aware, it is used also if project is in dumb mode
 public abstract class HighlightUsagesHandlerBase<T extends PsiElement> {
   @NotNull protected final Editor myEditor;
   @NotNull protected final PsiFile myFile;
