@@ -21,6 +21,7 @@ import com.intellij.openapi.editor.ex.util.EditorUtil;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
 import com.intellij.openapi.editor.markup.MarkupModel;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
@@ -72,6 +73,10 @@ public class IdentifierHighlighterPass {
   public void doCollectInformation() {
     HighlightUsagesHandlerBase<PsiElement> highlightUsagesHandler = HighlightUsagesHandler.createCustomHandler(myEditor, myFile, myVisibleRange);
     if (highlightUsagesHandler != null) {
+      // ROMOLO EDIT: use only dumb aware handlers
+      if (DumbService.isDumb(myFile.getProject()) && !DumbService.isDumbAware(highlightUsagesHandler)) {
+        return;
+      }
       List<PsiElement> targets = highlightUsagesHandler.getTargets();
       highlightUsagesHandler.computeUsages(targets);
       List<TextRange> readUsages = highlightUsagesHandler.getReadUsages();
@@ -85,6 +90,11 @@ public class IdentifierHighlighterPass {
       }
       myWriteAccessRanges.addAll(writeUsages);
       if (!highlightUsagesHandler.highlightReferences()) return;
+    }
+
+    // ROMOLO EDIT: not dumb aware
+    if (DumbService.isDumb(myFile.getProject())) {
+      return;
     }
 
     collectCodeBlockMarkerRanges();

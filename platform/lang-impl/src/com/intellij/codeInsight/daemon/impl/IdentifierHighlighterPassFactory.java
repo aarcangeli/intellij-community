@@ -24,7 +24,8 @@ public final class IdentifierHighlighterPassFactory {
                                                           @NotNull TextRange visibleRange) {
     if (!editor.isOneLineMode() &&
         CodeInsightSettings.getInstance().HIGHLIGHT_IDENTIFIER_UNDER_CARET &&
-        !DumbService.isDumb(file.getProject()) &&
+        //  ROMOLO EDIT: commented line, check moved in IdentifierHighlighterPass.doCollectInformation
+        //!DumbService.isDumb(file.getProject()) &&
         isEnabled() &&
         (file.isPhysical() || file.getOriginalFile().isPhysical())) {
       return new IdentifierHighlighterPass(file, editor, visibleRange);
