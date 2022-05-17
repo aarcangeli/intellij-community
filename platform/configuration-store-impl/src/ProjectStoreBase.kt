@@ -10,7 +10,9 @@ import com.intellij.openapi.application.appSystemDir
 import com.intellij.openapi.components.*
 import com.intellij.openapi.components.impl.stores.IProjectStore
 import com.intellij.openapi.diagnostic.runAndLogException
-import com.intellij.openapi.project.*
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectCoreUtil
+import com.intellij.openapi.project.doGetProjectFileName
 import com.intellij.openapi.project.ex.ProjectEx
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -287,6 +289,11 @@ abstract class ProjectStoreBase(final override val project: Project) : Component
     runBatchUpdate(project) {
       reinitComponents(componentNames)
     }
+  }
+
+  // ROMOLO EDIT: expose project path.
+  override fun getProjectPath(): Path {
+    return dirOrFile!!
   }
 }
 
