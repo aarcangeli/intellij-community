@@ -686,6 +686,9 @@ public class LookupImpl extends LightweightHint implements LookupEx, Disposable,
     myShown = true;
     myStampShown = System.currentTimeMillis();
 
+    // ROMOLO EDIT: show time to show first results in lookup
+    LOG.info(String.format("Completion showed in %dms", myStampShown - myCreatedTimestamp));
+
     fireLookupShown();
 
     if (ApplicationManager.getApplication().isHeadlessEnvironment()) return true;
