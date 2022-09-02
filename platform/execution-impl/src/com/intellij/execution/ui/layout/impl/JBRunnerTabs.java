@@ -1,9 +1,13 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package com.intellij.execution.ui.layout.impl;
 
+import com.intellij.execution.ui.layout.ViewContext;
+import com.intellij.ide.DataManager;
+import com.intellij.ide.impl.DataManagerImpl;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.SideBorder;
@@ -104,7 +108,7 @@ public class JBRunnerTabs extends SingleHeightTabs implements JBRunnerTabsBase {
   @NotNull
   @Override
   protected TabLabel createTabLabel(@NotNull TabInfo info) {
-    return new SingleHeightLabel(this, info) {
+    SingleHeightLabel label = new SingleHeightLabel(this, info) {
       @Override
       public void setTabActions(ActionGroup group) {
         super.setTabActions(group);
@@ -116,6 +120,18 @@ public class JBRunnerTabs extends SingleHeightTabs implements JBRunnerTabsBase {
       }
     };
 
+    // ROMOLO EDIT: Gives the tab a chance to return a content
+    DataManager.registerDataProvider(label, dataId -> {
+      if (ViewContext.CONTENT_KEY.is(dataId)) {
+        DataProvider dataProvider = DataManagerImpl.getDataProviderEx(info.getComponent());
+        if (dataProvider != null) {
+          return dataProvider.getData(dataId);
+        }
+      }
+      return null;
+    });
+
+    return label;
   }
 
   public class JBRunnerTabsBorder extends JBTabsBorder {
