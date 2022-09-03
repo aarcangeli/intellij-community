@@ -288,6 +288,25 @@ public class PopupFactoryImpl extends JBPopupFactory {
       super.handleSelect(handleFinalChoices, e);
     }
 
+    @Override
+    public void handleSelect(boolean handleFinalChoices) {
+      // END EDIT: do not close popup on select with keyboard
+      final Object selectedValue = getList().getSelectedValue();
+      final ActionPopupStep actionPopupStep = ObjectUtils.tryCast(getListStep(), ActionPopupStep.class);
+
+      if (actionPopupStep != null) {
+        KeepingPopupOpenAction dontClosePopupAction = getActionByClass(selectedValue, actionPopupStep, KeepingPopupOpenAction.class);
+        if (dontClosePopupAction != null) {
+          actionPopupStep.performAction((AnAction)dontClosePopupAction, 0, null);
+          getList().repaint();
+          return;
+        }
+      }
+      // END ROMOLO
+
+      super.handleSelect(handleFinalChoices);
+    }
+
     protected void handleToggleAction() {
       List<Object> selectedValues = getList().getSelectedValuesList();
 
