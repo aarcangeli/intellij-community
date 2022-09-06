@@ -22,6 +22,7 @@ import com.intellij.openapi.editor.actionSystem.CaretSpecificDataContext;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.editor.actionSystem.EditorActionManager;
 import com.intellij.openapi.editor.actions.EditorActionUtil;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -55,7 +56,8 @@ import java.util.stream.Collectors;
 /**
  * @author Irina.Chernushina on 10/1/2015.
  */
-public class JsonSchemaCompletionContributor extends CompletionContributor {
+// ROMOLO EDIT: add DumbAware
+public class JsonSchemaCompletionContributor extends CompletionContributor implements DumbAware {
   private static final String BUILTIN_USAGE_KEY = "builtin";
   private static final String SCHEMA_USAGE_KEY = "schema";
   private static final String USER_USAGE_KEY = "user";
