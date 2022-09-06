@@ -30,7 +30,7 @@ object VmOptionsGenerator {
 
   private val MEMORY_OPTIONS: Map<String, String> = linkedMapOf(
     "-Xms" to "128m",
-    "-Xmx" to "750m",
+    "-Xmx" to "4000m",
     "-XX:ReservedCodeCacheSize=" to "512m")
 
   @JvmStatic
