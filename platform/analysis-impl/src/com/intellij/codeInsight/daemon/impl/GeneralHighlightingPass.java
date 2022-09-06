@@ -73,7 +73,8 @@ public class GeneralHighlightingPass extends ProgressableTextEditorHighlightingP
   final EditorColorsScheme myGlobalScheme;
   private volatile NotNullProducer<HighlightVisitor[]> myHighlightVisitorProducer = this::cloneHighlightVisitors;
 
-  GeneralHighlightingPass(@NotNull PsiFile file,
+  // ROMOLO EDIT: made public
+  public GeneralHighlightingPass(@NotNull PsiFile file,
                           @NotNull Document document,
                           int startOffset,
                           int endOffset,
