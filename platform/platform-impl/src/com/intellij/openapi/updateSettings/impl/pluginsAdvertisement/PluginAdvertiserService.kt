@@ -41,6 +41,9 @@ open class PluginAdvertiserService {
     unknownFeatures: Collection<UnknownFeature>,
     includeIgnored: Boolean = false
   ) {
+    // ROMOLO EDIT: never suggest plugin or ultimate
+    if ("".isEmpty()) return;
+
     val featuresMap = MultiMap.createSet<PluginId, UnknownFeature>()
     val disabledPlugins = HashMap<PluginData, IdeaPluginDescriptor>()
 
