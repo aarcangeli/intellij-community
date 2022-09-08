@@ -410,6 +410,11 @@ private fun defineJavaSdk(context: CompilationContext) {
     .mapNotNull { it.getSdkReference(JpsJavaSdkType.INSTANCE)?.sdkName }
     .distinct()
     .forEach { sdkName ->
+      // Romolo fix: skip python SDKs
+      if (sdkName.contains("Python")) {
+        return@forEach
+      }
+
       val vendorPrefixEnd = sdkName.indexOf('-')
       val sdkNameWithoutVendor = if (vendorPrefixEnd == -1) sdkName else sdkName.substring(vendorPrefixEnd + 1)
       if (sdkNameWithoutVendor != "11") {
