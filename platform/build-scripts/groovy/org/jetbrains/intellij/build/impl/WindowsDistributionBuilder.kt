@@ -67,7 +67,10 @@ internal class WindowsDistributionBuilder(
       generateScripts(distBinDir)
     }
     generateVMOptions(distBinDir)
-    buildWinLauncher(targetPath)
+
+    // ROMOLO EDIT: replaced with custom launcher generator
+    buildRomoloWinLauncher(targetPath)
+
     customizer.copyAdditionalFiles(context, targetPath.toString())
 
     context.executeStep(spanBuilder = spanBuilder("sign windows"), stepId = BuildOptions.WIN_SIGN_STEP) {
@@ -246,6 +249,7 @@ internal class WindowsDistributionBuilder(
     VmOptionsGenerator.writeVmOptions(distBinDir.resolve(fileName), vmOptions, "\r\n")
   }
 
+  // ROMOLO EDIT: Replaced with buildRomoloWinLauncher
   private fun buildWinLauncher(winDistPath: Path) {
     spanBuilder("build Windows executable").useWithScope {
       val executableBaseName = "${context.productProperties.baseFileName}64"
@@ -312,6 +316,50 @@ internal class WindowsDistributionBuilder(
         jvmArgs = listOf("-Djava.awt.headless=true"),
         classPath = classpath
       )
+    }
+  }
+
+  private fun buildRomoloWinLauncher(winDistPath: Path) {
+    spanBuilder("build Romolo Windows executable").useWithScope {
+      val executableBaseName = context.productProperties.baseFileName
+      val launcherPropertiesPath = context.paths.tempDir.resolve("launcher.properties")
+      @Suppress("SpellCheckingInspection")
+      val vmOptions = context.getAdditionalJvmArguments(OsFamily.WINDOWS) + listOf("-Dide.native.launcher=true")
+      val productName = context.applicationInfo.shortProductName
+      val classPath = context.bootClassPathJarNames.joinToString(separator = ";")
+      val bootClassPath = context.xBootClassPathJarNames.joinToString(separator = ";")
+      val envVarBaseName = context.productProperties.getEnvironmentVariableBaseName(context.applicationInfo)
+      val icoFilesDirectory = context.paths.tempDir.resolve("win-launcher-ico")
+      val appInfoForLauncher = generateApplicationInfoForLauncher(patchedApplicationInfo, icoFilesDirectory)
+
+      val jbrPath = "packages/jbr-17.0.3"
+
+      @Suppress("SpellCheckingInspection")
+      Files.writeString(launcherPropertiesPath, """
+        IDS_JDK_ENV_VAR=${envVarBaseName}_JDK
+        IDS_APP_TITLE=$productName Launcher
+        IDS_VM_OPTIONS_PATH=%APPDATA%\\\\${context.applicationInfo.shortCompanyName}\\\\${context.systemSelector}
+        IDS_VM_OPTION_ERRORFILE=-XX:ErrorFile=%USERPROFILE%\\\\java_error_in_${executableBaseName}_%p.log
+        IDS_VM_OPTION_HEAPDUMPPATH=-XX:HeapDumpPath=%USERPROFILE%\\\\java_error_in_${executableBaseName}.hprof
+        IDS_PROPS_ENV_VAR=${envVarBaseName}_PROPERTIES
+        IDS_VM_OPTIONS_ENV_VAR=${envVarBaseName}_VM_OPTIONS
+        IDS_VM_OPTIONS=${vmOptions.joinToString(separator = " ")}
+        IDS_CLASSPATH_LIBS=${classPath}
+        IDS_BOOTCLASSPATH_LIBS=${bootClassPath}
+        IDS_JBR_PATH=${jbrPath}
+        IDS_ROOT_APPLICATION_PATH=${context.getApplicationFolderName()}
+        """.trimIndent().trim())
+
+      val inputPath = "${context.paths.projectHome}/bin/win/romolo.launcher.exe"
+      val outputPath = winDistPath.resolve("${executableBaseName}.exe")
+
+      //LauncherGeneratorMain.main(arrayOf(
+      //  inputPath,
+      //  appInfoForLauncher.toString(),
+      //  "${context.paths.projectHome}/natives/tools/launcher/windows/resource.h",
+      //  launcherPropertiesPath.toString(),
+      //  outputPath.toString(),
+      //))
     }
   }
 

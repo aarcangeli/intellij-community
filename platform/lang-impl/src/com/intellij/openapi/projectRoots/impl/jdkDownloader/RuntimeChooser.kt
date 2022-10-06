@@ -5,7 +5,8 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 
-
+// ROMOLO EDIT: action disabled as it is not possible to use a different JDK for the IDE
+@Suppress("ComponentNotRegistered")
 class RuntimeChooserAction : DumbAwareAction() {
   override fun actionPerformed(e: AnActionEvent) {
     RuntimeChooserUtil.showRuntimeChooserPopup()

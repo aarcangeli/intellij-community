@@ -270,4 +270,9 @@ abstract class ProductProperties {
    */
   open fun customizeBuiltinModules(context: BuildContext, builtinModulesFile: Path) {
   }
+
+  /**
+   * If {@code true} creates a directory structure compliant with the Romolo project.
+   */
+  var buildRomoloDistribution: Boolean = false
 }

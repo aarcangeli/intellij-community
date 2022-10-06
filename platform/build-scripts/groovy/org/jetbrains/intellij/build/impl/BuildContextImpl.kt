@@ -28,6 +28,8 @@ class BuildContextImpl : BuildContext {
   override val fullBuildNumber: String
     get() = "${applicationInfo.productCode}-$buildNumber"
 
+  override fun getApplicationFolderName() = fullBuildNumber
+
   override val systemSelector: String
     get() = productProperties.getSystemSelector(applicationInfo, buildNumber)
 

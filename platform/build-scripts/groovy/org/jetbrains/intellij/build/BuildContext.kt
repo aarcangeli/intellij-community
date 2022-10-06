@@ -83,6 +83,9 @@ interface BuildContext: CompilationContext {
    * see BuildTasksImpl.buildProvidedModuleList
    */
   fun getBuiltinModule(): BuiltinModulesFileData?
+
+  // ROMOLO EDIT: Path containing the application
+  fun getApplicationFolderName(): String
 }
 
 inline fun BuildContext.executeStep(spanBuilder: SpanBuilder, stepId: String, step: () -> Unit) {

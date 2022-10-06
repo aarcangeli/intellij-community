@@ -1262,9 +1262,10 @@
             class="com.intellij.ui.DumpFocusableComponentHierarchyAction"/>
     <action id="DumpFeaturesAndTips" internal="true" class="com.intellij.featureStatistics.actions.DumpFeaturesAndTipsAction"/>
 
-    <action id="ChooseRuntime" class="com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserAction">
-      <synonym text="Choose Runtime"/>
-    </action>
+    <!-- ROMOLO EDIT: action disabled as it is not possible to use a different JDK for the IDE -->
+    <!--<action id="ChooseRuntime" class="com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserAction">-->
+    <!--  <synonym text="Choose Runtime"/>-->
+    <!--</action>-->
 
     <group id="EditorContextBarMenu">
       <action id="EditorToggleUseSoftWrapsInPreview" class="com.intellij.openapi.editor.actions.ToggleUseSoftWrapsInPreviewAction"
