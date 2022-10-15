@@ -20,4 +20,7 @@ interface BundledRuntime {
   fun checkExecutablePermissions(distribution: Path, root: String, os: OsFamily)
 
   fun executableFilesPatterns(os: OsFamily): List<String>
+
+  // ROMOLO EDIT: expose the jbr version
+  fun getJbrVersion(): String
 }

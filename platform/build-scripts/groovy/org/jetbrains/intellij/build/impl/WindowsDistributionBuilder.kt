@@ -69,7 +69,10 @@ internal class WindowsDistributionBuilder(
     generateVMOptions(distBinDir)
 
     // ROMOLO EDIT: replaced with custom launcher generator
-    buildRomoloWinLauncher(targetPath)
+    if (context.productProperties.buildRomoloDistribution) {
+      //buildRomoloWinLauncher(targetPath)
+    }
+    buildWinLauncher(targetPath)
 
     customizer.copyAdditionalFiles(context, targetPath.toString())
 
@@ -112,6 +115,9 @@ internal class WindowsDistributionBuilder(
 
     copyFileToDir(vcRtDll, osAndArchSpecificDistPath.resolve("bin"))
 
+    // Instantiate shim
+    val shimInstantiation: Path = instantiateShim(osAndArchSpecificDistPath)
+
     val zipPathTask = if (customizer.buildZipArchive) {
       val jreDirectoryPaths = if (customizer.zipArchiveWithBundledJre) listOf(jreDir) else emptyList()
       createBuildWinZipTask(jreDirectoryPaths, ".win", osAndArchSpecificDistPath, customizer, context).fork()
@@ -130,7 +136,7 @@ internal class WindowsDistributionBuilder(
                           context = context)
 
       exePath = WinExeInstallerBuilder(context, customizer, jreDir)
-        .buildInstaller(osAndArchSpecificDistPath, productJsonDir, "", context)
+        .buildInstaller(osAndArchSpecificDistPath, productJsonDir, "", context, shimInstantiation)
     }
 
     val zipPath = zipPathTask?.join()
@@ -162,6 +168,22 @@ internal class WindowsDistributionBuilder(
       NioFiles.deleteRecursively(tempZip)
       NioFiles.deleteRecursively(tempExe)
     }
+  }
+
+  private fun instantiateShim(osAndArchSpecificDistPath: Path): Path {
+    val shimInstantiation = context.paths.tempDir.resolve("shimRoot")
+    val baseFileName = context.productProperties.baseFileName
+    Files.createDirectories(shimInstantiation.resolve("bin"))
+
+    Files.copy(osAndArchSpecificDistPath.resolve("bin/win/tools/shim.exe"), shimInstantiation.resolve("bin/${baseFileName}.exe"))
+
+    Files.writeString(shimInstantiation.resolve("bin/${baseFileName}.shim"), """path = "../${context.getRomoloApplicationFolderName()}/bin/${baseFileName}.bat"
+""")
+
+    Files.copy(osAndArchSpecificDistPath.resolve("bin/win/tools/romolo.launcher.exe"), shimInstantiation.resolve("${baseFileName}.exe"))
+    Files.writeString(shimInstantiation.resolve("${baseFileName}.exe.jdk"), "${context.getRomoloApplicationFolderName()}/jbr")
+
+    return shimInstantiation
   }
 
   private fun generateScripts(distBinDir: Path) {
@@ -249,7 +271,6 @@ internal class WindowsDistributionBuilder(
     VmOptionsGenerator.writeVmOptions(distBinDir.resolve(fileName), vmOptions, "\r\n")
   }
 
-  // ROMOLO EDIT: Replaced with buildRomoloWinLauncher
   private fun buildWinLauncher(winDistPath: Path) {
     spanBuilder("build Windows executable").useWithScope {
       val executableBaseName = "${context.productProperties.baseFileName}64"
@@ -323,7 +344,6 @@ internal class WindowsDistributionBuilder(
     spanBuilder("build Romolo Windows executable").useWithScope {
       val executableBaseName = context.productProperties.baseFileName
       val launcherPropertiesPath = context.paths.tempDir.resolve("launcher.properties")
-      @Suppress("SpellCheckingInspection")
       val vmOptions = context.getAdditionalJvmArguments(OsFamily.WINDOWS) + listOf("-Dide.native.launcher=true")
       val productName = context.applicationInfo.shortProductName
       val classPath = context.bootClassPathJarNames.joinToString(separator = ";")
@@ -331,32 +351,36 @@ internal class WindowsDistributionBuilder(
       val envVarBaseName = context.productProperties.getEnvironmentVariableBaseName(context.applicationInfo)
       val icoFilesDirectory = context.paths.tempDir.resolve("win-launcher-ico")
       val appInfoForLauncher = generateApplicationInfoForLauncher(patchedApplicationInfo, icoFilesDirectory)
-
       val jbrPath = "packages/jbr-17.0.3"
 
-      @Suppress("SpellCheckingInspection")
       Files.writeString(launcherPropertiesPath, """
         IDS_JDK_ENV_VAR=${envVarBaseName}_JDK
         IDS_APP_TITLE=$productName Launcher
         IDS_VM_OPTIONS_PATH=%APPDATA%\\\\${context.applicationInfo.shortCompanyName}\\\\${context.systemSelector}
-        IDS_VM_OPTION_ERRORFILE=-XX:ErrorFile=%USERPROFILE%\\\\java_error_in_${executableBaseName}_%p.log
-        IDS_VM_OPTION_HEAPDUMPPATH=-XX:HeapDumpPath=%USERPROFILE%\\\\java_error_in_${executableBaseName}.hprof
         IDS_PROPS_ENV_VAR=${envVarBaseName}_PROPERTIES
         IDS_VM_OPTIONS_ENV_VAR=${envVarBaseName}_VM_OPTIONS
         IDS_VM_OPTIONS=${vmOptions.joinToString(separator = " ")}
         IDS_CLASSPATH_LIBS=${classPath}
         IDS_BOOTCLASSPATH_LIBS=${bootClassPath}
         IDS_JBR_PATH=${jbrPath}
-        IDS_ROOT_APPLICATION_PATH=${context.getApplicationFolderName()}
+        IDS_ROOT_APPLICATION_PATH=${context.getRomoloApplicationFolderName()}
         """.trimIndent().trim())
 
-      val inputPath = "${context.paths.projectHome}/bin/win/romolo.launcher.exe"
-      val outputPath = winDistPath.resolve("${executableBaseName}.exe")
+      val inputPath = Path.of(context.paths.projectHome, "bin/win/romolo.launcher.exe")
+      val resourceFile = Path.of(context.paths.projectHome, "natives/tools/launcher/windows/resource.h")
+      val outputPath = winDistPath.resolve("bin/${executableBaseName}.exe")
 
+      if (!Files.exists(inputPath)) {
+        throw RuntimeException("Romolo launcher not found at $inputPath")
+      }
+
+      //val generator = LauncherGenerator(inputPath.toFile(), outputPath.toFile())
+      //generator.load()
+      //
       //LauncherGeneratorMain.main(arrayOf(
-      //  inputPath,
+      //  inputPath.toString(),
       //  appInfoForLauncher.toString(),
-      //  "${context.paths.projectHome}/natives/tools/launcher/windows/resource.h",
+      //  resourceFile.toString(),
       //  launcherPropertiesPath.toString(),
       //  outputPath.toString(),
       //))
@@ -405,6 +429,36 @@ private fun createBuildWinZipTask(jreDirectoryPaths: List<Path>,
                     targetFile = targetFile,
                     map = dirs.associateWithTo(LinkedHashMap(dirs.size)) { zipPrefix },
                     compress = true)
+    checkInArchive(context = context, archiveFile = targetFile, pathInArchive = zipPrefix)
+    context.notifyArtifactWasBuilt(targetFile)
+    targetFile
+  }
+}
+
+private fun createUpdatingBuildWinZipTask(jreDirectoryPaths: List<Path>,
+                                          @Suppress("SameParameterValue") zipNameSuffix: String,
+                                          winDistPath: Path,
+                                          customizer: WindowsDistributionCustomizer,
+                                          context: BuildContext,
+                                          shimInstantiation: Path): ForkJoinTask<Path> {
+  val baseName = context.productProperties.getBaseArtifactName(context.applicationInfo, context.buildNumber)
+  val targetFile = context.paths.artifactDir.resolve("${baseName}${zipNameSuffix}.zip")
+  return createTask(spanBuilder("build Windows ${zipNameSuffix}.zip auto-update distribution")
+    .setAttribute("targetFile", targetFile.toString())) {
+    val productJsonDir = context.paths.tempDir.resolve("win.dist.product-info.json.zip$zipNameSuffix")
+    generateProductJson(productJsonDir, !jreDirectoryPaths.isEmpty(), context)
+
+    val zipPrefix = if (context.productProperties.buildRomoloDistribution)
+      context.getRomoloApplicationFolderName()
+    else
+      customizer.getRootDirectoryName(context.applicationInfo, context.buildNumber)
+    val dirs = listOf(context.paths.distAllDir, winDistPath, productJsonDir) + jreDirectoryPaths
+    val map = dirs.associateWithTo(LinkedHashMap(dirs.size)) { zipPrefix } + mapOf(shimInstantiation to "")
+
+    zipWithPrefixes(context = context,
+      targetFile = targetFile,
+      map = map,
+      compress = true)
     checkInArchive(context = context, archiveFile = targetFile, pathInArchive = zipPrefix)
     context.notifyArtifactWasBuilt(targetFile)
     targetFile

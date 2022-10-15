@@ -111,6 +111,14 @@ final class WinExeInstallerBuilder {
 
       generator.generateInstallerFile(nsiConfDir.resolve("idea_win.nsh").toFile())
 
+      //def uninstallFile = nsiConfDir.resolve("unidea_win.nsh").toFile()
+      //if (context.productProperties.buildRomoloDistribution) {
+      //  //uninstallFile.withWriter { BufferedWriter out ->
+      //  //  out.writeLine("!include \"uninstall-romolo.nsh\"")
+      //  //}
+      //}
+      //else {
+      //}
       generator.generateUninstallerFile(nsiConfDir.resolve("unidea_win.nsh").toFile())
     }
     catch (IOException e) {
@@ -223,6 +231,7 @@ final class WinExeInstallerBuilder {
 !define INSTALL_DIR_AND_SHORTCUT_NAME "${installDirAndShortcutName}"
 !define PRODUCT_WITH_VER "\${MUI_PRODUCT} $versionString"
 !define PRODUCT_PATHS_SELECTOR "${buildContext.systemSelector}"
+!define FULL_BUILD_NUMBER "${buildContext.fullBuildNumber}"
 """)
   }
 }

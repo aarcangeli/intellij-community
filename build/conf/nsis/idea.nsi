@@ -3,6 +3,10 @@ ManifestDPIAware true
 !addplugindir "${NSIS_DIR}\Plugins\x86-unicode"
 !addincludedir "${NSIS_DIR}\Include"
 
+; Romolo customizations:
+;  - removed version number from installation path
+;  - changed installation layout, see docs/directory-structure.md
+
 SetCompressor lzma
 
 !include "paths.nsi"
@@ -16,13 +20,6 @@ SetCompressor lzma
 ;!define Environment '"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
 ;users
 !define Environment 'Environment'
-
-; Product with version (IntelliJ IDEA #xxxx).
-
-; Used in registry to put each build info into the separate subkey
-; Add&Remove programs doesn't understand subkeys in the Uninstall key,
-; thus ${PRODUCT_WITH_VER} is used for uninstall registry information
-!define PRODUCT_REG_VER "${MUI_PRODUCT}\${VER_BUILD}"
 
 Name "${MUI_PRODUCT}"
 ; http://nsis.sourceforge.net/Shortcuts_removal_fails_on_Windows_Vista
@@ -440,10 +437,10 @@ Page custom uninstallOldVersionDialog
 Page custom ConfirmDesktopShortcut
 !define MUI_PAGE_HEADER_TEXT "$(choose_start_menu_folder)"
 !define MUI_STARTMENUPAGE_NODISABLE
-!define MUI_STARTMENUPAGE_DEFAULTFOLDER "JetBrains"
+!define MUI_STARTMENUPAGE_DEFAULTFOLDER "Romolo"
 
 !insertmacro MUI_PAGE_STARTMENU Application $STARTMENU_FOLDER
-!define MUI_ABORTWARNING
+;!define MUI_ABORTWARNING
 
 !define MUI_PAGE_HEADER_TEXT "$(installing_product)"
 !insertmacro MUI_PAGE_INSTFILES
@@ -466,7 +463,7 @@ InstallDir "$PROGRAMFILES\${MANUFACTURER}\${INSTALL_DIR_AND_SHORTCUT_NAME}"
 BrandingText " "
 
 Function PageFinishRun
-  !insertmacro UAC_AsUser_ExecShell "" "${PRODUCT_EXE_FILE}" "" "$INSTDIR\bin" ""
+  !insertmacro UAC_AsUser_ExecShell "" "${PRODUCT_EXE_FILE}" "" "$INSTDIR" ""
 FunctionEnd
 
 ;------------------------------------------------------------------------------
@@ -588,9 +585,9 @@ Function IncorrectSilentInstallParameters
   !define msg1 "How to run installation in silent mode:$\r$\n"
   !define msg2 "<installation> /S /CONFIG=<path to silent config with file name> /D=<install dir>$\r$\n$\r$\n"
   !define msg3 "Examples:$\r$\n"
-  !define msg4 "Installation.exe /S /CONFIG=d:\download\silent.config /D=d:\JetBrains\Product$\r$\n"
+  !define msg4 "Installation.exe /S /CONFIG=d:\download\silent.config /D=D:\Romolo\r$\n"
   !define msg5 "Run installation in silent mode with logging:$\r$\n"
-  !define msg6 "Installation.exe /S /CONFIG=d:\download\silent.config /LOG=d:\JetBrains\install.log /D=d:\JetBrains\Product$\r$\n"
+  !define msg6 "Installation.exe /S /CONFIG=d:\download\silent.config /LOG=D:\Romolo\install.log /D=D:\Romolo\Product$\r$\n"
   MessageBox MB_OK|MB_ICONSTOP "${msg1}${msg2}${msg3}${msg4}${msg5}${msg6}"
   ${LogText} "ERROR: silent installation: incorrect parameters."
   Abort
@@ -599,7 +596,7 @@ FunctionEnd
 
 Function checkVersion
   StrCpy $2 ""
-  StrCpy $1 "Software\${MANUFACTURER}\${PRODUCT_REG_VER}"
+  StrCpy $1 "Software\${MANUFACTURER}\${MUI_PRODUCT}"
   Call OMReadRegStr
   IfFileExists $3\bin\${PRODUCT_EXE_FILE} check_version
   Goto done
@@ -643,19 +640,19 @@ Function uninstallOldVersion
   ${LogText} "Uninstall old installation: $3"
 
   ;do copy for unistall.exe
-  CopyFiles "$3\bin\Uninstall.exe" "$LOCALAPPDATA\${PRODUCT_PATHS_SELECTOR}_${VER_BUILD}_Uninstall.exe"
+  CopyFiles "$3\Uninstall.exe" "$LOCALAPPDATA\${MUI_PRODUCT}_${VER_BUILD}_Uninstall.exe"
 
   ${If} $9 == "1"
-    ExecWait '"$LOCALAPPDATA\${PRODUCT_PATHS_SELECTOR}_${VER_BUILD}_Uninstall.exe" /S /NO_UNINSTALL_FEEDBACK=true _?=$3\bin'
+    ExecWait '"$LOCALAPPDATA\${MUI_PRODUCT}_${VER_BUILD}_Uninstall.exe" /S /NO_UNINSTALL_FEEDBACK=true _?=$3'
   ${else}
-    ExecWait '"$LOCALAPPDATA\${PRODUCT_PATHS_SELECTOR}_${VER_BUILD}_Uninstall.exe" /NO_UNINSTALL_FEEDBACK=true _?=$3\bin'
+    ExecWait '"$LOCALAPPDATA\${MUI_PRODUCT}_${VER_BUILD}_Uninstall.exe" /NO_UNINSTALL_FEEDBACK=true _?=$3'
   ${EndIf}
   IfFileExists $3\bin\${PRODUCT_EXE_FILE} 0 uninstall
   goto complete
 uninstall:
   ;previous installation has been removed
   ;customer has decided to keep properties?
-  Delete "$LOCALAPPDATA\${PRODUCT_PATHS_SELECTOR}_${VER_BUILD}_Uninstall.exe"
+  Delete "$LOCALAPPDATA\${MUI_PRODUCT}_${VER_BUILD}_Uninstall.exe"
 complete:
 FunctionEnd
 
@@ -751,7 +748,7 @@ get_installation_info:
   Call getInstallationPath
   StrCmp $3 "complete" next_registry_root
   ;check if the old installation could be uninstalled
-  IfFileExists $3\bin\Uninstall.exe uninstall_dialog get_next_key
+  IfFileExists $3\Uninstall.exe uninstall_dialog get_next_key
 uninstall_dialog:
   Call checkProductVersion
   ${If} $6 != "duplicated"
@@ -853,7 +850,7 @@ user:
   StrCpy $4 0
   StrCpy $0 "HKCU"
   StrCpy $1 "Software\${MANUFACTURER}\${MUI_PRODUCT}"
-  StrCpy $5 "\bin\${PRODUCT_EXE_FILE}"
+  StrCpy $5 "\${PRODUCT_EXE_FILE}"
   StrCpy $2 ""
   Call getInstallationPath
   StrCmp $3 "complete" admin
@@ -912,18 +909,12 @@ FunctionEnd
 Function ProductRegistration
   ${LogText} ""
   ${LogText} "Do registration ${MUI_PRODUCT} ${VER_BUILD}"
-  StrCmp "${PRODUCT_WITH_VER}" "${MUI_PRODUCT} ${VER_BUILD}" eapInfo releaseInfo
-eapInfo:
-  StrCpy $3 "${PRODUCT_WITH_VER}(EAP)"
-  goto createRegistration
-releaseInfo:
-  StrCpy $3 "${PRODUCT_WITH_VER}"
-createRegistration:
-  StrCpy $0 "HKCR"
-  StrCpy $1 "Applications\${PRODUCT_EXE_FILE}\shell\open"
+  StrCpy $0 "SHCTX"
+  StrCpy $1 "Software\Classes\Applications\${PRODUCT_EXE_FILE}\shell\open"
   StrCpy $2 "FriendlyAppName"
+  StrCpy $3 "${MUI_PRODUCT}"
   call OMWriteRegStr
-  StrCpy $1 "Applications\${PRODUCT_EXE_FILE}\shell\open\command"
+  StrCpy $1 "Software\Classes\Applications\${PRODUCT_EXE_FILE}\shell\open\command"
   StrCpy $2 ""
   StrCpy $3 '"$productLauncher" "%1"'
   call OMWriteRegStr
@@ -938,7 +929,7 @@ Function UpdateContextMenu
   StrCpy $0 "SHCTX"
   StrCpy $1 "Software\Classes\Directory\shell\${MUI_PRODUCT}"
   StrCpy $2 ""
-  StrCpy $3 "Open Folder as ${MUI_PRODUCT} Project"
+  StrCpy $3 "Open Folder with ${MUI_PRODUCT}"
   call OMWriteRegStr
 
   StrCpy $1 "Software\Classes\Directory\shell\${MUI_PRODUCT}"
@@ -953,7 +944,7 @@ Function UpdateContextMenu
 
   StrCpy $1 "Software\Classes\Directory\Background\shell\${MUI_PRODUCT}"
   StrCpy $2 ""
-  StrCpy $3 "Open Folder as ${MUI_PRODUCT} Project"
+  StrCpy $3 "Open Folder with ${MUI_PRODUCT}"
   call OMWriteRegStr
 
   StrCpy $1 "Software\Classes\Directory\Background\shell\${MUI_PRODUCT}"
@@ -1027,17 +1018,50 @@ command_exists:
   ${LogText} "Update Context Menu - Edit with PRODUCT"
 
   StrCpy $0 "SHCTX"
-  StrCpy $1 "Software\Classes\*\shell\Open with ${MUI_PRODUCT}"
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}"
   StrCpy $2 "Icon"
   StrCpy $3 "$productLauncher"
   call OMWriteRegStr
 
-  StrCpy $1 "Software\Classes\*\shell\Open with ${MUI_PRODUCT}\command"
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}\command"
   StrCpy $2 ""
   StrCpy $3 '"$productLauncher" "%1"'
   call OMWriteRegStr
 
-  StrCpy $1 "Software\Classes\*\shell\Open with ${MUI_PRODUCT}"
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}"
+  StrCpy $2 ""
+  StrCpy $3 "Edit with ${MUI_PRODUCT}"
+  call OMWriteRegStr
+
+  pop $3
+  pop $2
+  pop $1
+  pop $0
+FunctionEnd
+
+
+Function GeneralProductAssociation
+  push $0
+  push $1
+  push $2
+  push $3
+
+  ; add "Edit with PRODUCT" action for files to Windows context menu
+  ${LogText} ""
+  ${LogText} "Update Context Menu - Edit with PRODUCT"
+
+  StrCpy $0 "SHCTX"
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}"
+  StrCpy $2 "Icon"
+  StrCpy $3 "$productLauncher"
+  call OMWriteRegStr
+
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}\command"
+  StrCpy $2 ""
+  StrCpy $3 '"$productLauncher" "%1"'
+  call OMWriteRegStr
+
+  StrCpy $1 "Software\Classes\*\shell\${MUI_PRODUCT}"
   StrCpy $2 ""
   StrCpy $3 "Edit with ${MUI_PRODUCT}"
   call OMWriteRegStr
@@ -1064,18 +1088,18 @@ FunctionEnd
 
 
 Function createProductEnvVar
-  WriteRegStr HKCU ${Environment} "${MUI_PRODUCT}" "$INSTDIR\bin;"
-  ${LogText} "  create product env var: ${MUI_PRODUCT} $INSTDIR\bin;"
+  WriteRegStr HKCU ${Environment} "${MUI_PRODUCT}_HOME" "$INSTDIR"
+  ${LogText} "  create product env var: ${MUI_PRODUCT}_HOME $INSTDIR"
 FunctionEnd
 
 
 Function updatePathEnvVar
   StrCmp $pathEnvVar "" do_not_change_path 0
-  ${StrStr} $R0 $pathEnvVar "%${MUI_PRODUCT}%"
+  ${StrStr} $R0 $pathEnvVar "%${MUI_PRODUCT}_HOME%"
   StrCmp $R0 "" absent done
 absent:
-  WriteRegExpandStr HKCU ${Environment} "Path" "$pathEnvVar;%${MUI_PRODUCT}%"
-  ${LogText} "  update PATH: HKCU ${Environment} Path $pathEnvVar;%${MUI_PRODUCT}%"
+  WriteRegExpandStr HKCU ${Environment} "Path" "$pathEnvVar;%${MUI_PRODUCT}_HOME\bin%"
+  ${LogText} "  update PATH: HKCU ${Environment} Path $pathEnvVar;%${MUI_PRODUCT}_HOME\bin%"
   Goto done
 do_not_change_path:
   ${LogText} ""
@@ -1095,15 +1119,15 @@ Section "IDEA Files" CopyIdeaFiles
   Call customInstallActions
   SetRegView 32
 
-  StrCpy $productLauncher "$INSTDIR\bin\${PRODUCT_EXE_FILE}"
+  StrCpy $productLauncher "$INSTDIR\${PRODUCT_EXE_FILE}"
   ${LogText} "Default launcher: $productLauncher"
   DetailPrint "Default launcher: $productLauncher"
 
   !insertmacro INSTALLOPTIONS_READ $R0 "Desktop.ini" "Field $launcherShortcut" "State"
   ${If} $R0 == 1
     CreateShortCut "$DESKTOP\${INSTALL_DIR_AND_SHORTCUT_NAME}.lnk" \
-                   "$INSTDIR\bin\${PRODUCT_EXE_FILE}" "" "" "" SW_SHOWNORMAL
-    ${LogText} "Create shortcut: $DESKTOP\${INSTALL_DIR_AND_SHORTCUT_NAME}.lnk $INSTDIR\bin\${PRODUCT_EXE_FILE}"
+                   "$INSTDIR\${PRODUCT_EXE_FILE}" "" "" "" SW_SHOWNORMAL
+    ${LogText} "Create shortcut: $DESKTOP\${INSTALL_DIR_AND_SHORTCUT_NAME}.lnk $INSTDIR\${PRODUCT_EXE_FILE}"
   ${EndIf}
 
   !insertmacro INSTALLOPTIONS_READ $R0 "Desktop.ini" "Field $addToPath" "State"
@@ -1119,6 +1143,7 @@ Section "IDEA Files" CopyIdeaFiles
     !insertmacro INSTALLOPTIONS_READ $R0 "Desktop.ini" "Field $updateContextMenu" "State"
     ${If} $R0 == 1
       Call UpdateContextMenu
+      Call GeneralProductAssociation
     ${EndIf}
   ${EndIf}
 
@@ -1169,9 +1194,9 @@ skip_ipr:
   ; registration application to be presented in Open With list
   call ProductRegistration
 
-  !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
   ; $STARTMENU_FOLDER stores name of IDEA folder in Start Menu,
   ; save it name in the "MenuFolder" RegValue
+  StrCpy $STARTMENU_FOLDER "Romolo"
   CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\${INSTALL_DIR_AND_SHORTCUT_NAME}.lnk" \
                  "$productLauncher" "" "" "" SW_SHOWNORMAL
@@ -1184,11 +1209,10 @@ skip_ipr:
   ${LogText} "ShortCutWorkingDirectory: $0"
 
   StrCpy $0 $baseRegKey
-  StrCpy $1 "Software\${MANUFACTURER}\${PRODUCT_REG_VER}"
+  StrCpy $1 "Software\${MANUFACTURER}\${MUI_PRODUCT}"
   StrCpy $2 "MenuFolder"
   StrCpy $3 "$STARTMENU_FOLDER"
   Call OMWriteRegStr
-  !insertmacro MUI_STARTMENU_WRITE_END
 
   ; enabling Java assistive technologies if a screen reader is active (0x0046 = SPI_GETSCREENREADER)
   System::Call "User32::SystemParametersInfo(i 0x0046, i 0, *i .r1, i 0) i .r0"
@@ -1214,7 +1238,7 @@ skip_ipr:
 
   SetRegView 32
   StrCpy $0 $baseRegKey
-  StrCpy $1 "Software\${MANUFACTURER}\${PRODUCT_REG_VER}"
+  StrCpy $1 "Software\${MANUFACTURER}\${MUI_PRODUCT}"
   StrCpy $2 ""
   StrCpy $3 "$INSTDIR"
   Call OMWriteRegStr
@@ -1223,26 +1247,26 @@ skip_ipr:
   Call OMWriteRegStr
 
   ; write uninstaller & add it to add/remove programs in control panel
-  WriteUninstaller "$INSTDIR\bin\Uninstall.exe"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
             "DisplayName" "${INSTALL_DIR_AND_SHORTCUT_NAME}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
-              "UninstallString" "$INSTDIR\bin\Uninstall.exe"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
+              "UninstallString" "$INSTDIR\Uninstall.exe"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "InstallLocation" "$INSTDIR"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "DisplayIcon" "$productLauncher"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "DisplayVersion" "${VER_BUILD}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
-              "Publisher" "JetBrains s.r.o."
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
-              "URLInfoAbout" "https://www.jetbrains.com/products"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
+              "Publisher" "Alessandro Arcangeli (aarcangeli)"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
+              "URLInfoAbout" "https://github.com/aarcangeli/romolo-ide"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "InstallType" "$baseRegKey"
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "NoModify" 1
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}" \
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" \
               "NoRepair" 1
 
   SetOutPath $INSTDIR\bin
@@ -1253,7 +1277,7 @@ skip_ipr:
     AccessControl::GrantOnFile \
       "$INSTDIR" "(S-1-5-32-545)" "GenericRead + GenericExecute"
     AccessControl::GrantOnFile \
-      "$INSTDIR\bin\${PRODUCT_EXE_FILE}.vmoptions" "(S-1-5-32-545)" "GenericRead + GenericWrite"
+      "$INSTDIR\${FULL_BUILD_NUMBER}\bin\${PRODUCT_EXE_FILE}.vmoptions" "(S-1-5-32-545)" "GenericRead + GenericWrite"
   ${EndIf}
 
   ; reset icon cache
@@ -1295,6 +1319,11 @@ set_reg_key:
   StrCpy $baseRegKey "HKCU"
   StrCmp $silentMode "admin" uac_elevate installdir_is_empty
 uac_elevate:
+
+  ; ROMOLO EDIT: skip UAC elevation
+  goto uac_elevation_aborted
+  ; ROMOLO END
+
   !insertmacro UAC_RunElevated
   StrCmp 1223 $0 uac_elevation_aborted ; UAC dialog aborted by user? - continue install under user
   StrCmp 0 $0 0 uac_err ; Error?
@@ -1306,7 +1335,8 @@ uac_elevation_aborted:
   ${LogText} ""
   ${LogText} "  NOTE: UAC elevation has been aborted. Installation dir will be changed."
   ${LogText} ""
-  StrCpy $INSTDIR "$LOCALAPPDATA\${MANUFACTURER}\${INSTALL_DIR_AND_SHORTCUT_NAME}"
+  ; ROMOLO EDIT: change removed "${MANUFACTURER}\"
+  StrCpy $INSTDIR "$LOCALAPPDATA\${INSTALL_DIR_AND_SHORTCUT_NAME}"
   goto installdir_is_empty
 uac_success:
   StrCmp 1 $3 uac_admin ;Admin?
@@ -1315,7 +1345,8 @@ uac_success:
 uac_admin:
   IfSilent uac_all_users set_install_dir_admin_mode
 set_install_dir_admin_mode:
-  StrCpy $INSTDIR "$PROGRAMFILES64\${MANUFACTURER}\${INSTALL_DIR_AND_SHORTCUT_NAME}"
+  ; ROMOLO EDIT: change removed "${MANUFACTURER}\"
+  StrCpy $INSTDIR "$PROGRAMFILES64\${INSTALL_DIR_AND_SHORTCUT_NAME}"
 uac_all_users:
   SetShellVarContext all
   StrCpy $baseRegKey "HKLM"
@@ -1368,15 +1399,13 @@ FunctionEnd
 ;------------------------------------------------------------------------------
 
 Function un.getRegKey
-  ReadRegStr $R2 HKCU "Software\${MANUFACTURER}\${PRODUCT_REG_VER}" ""
-  StrCpy $R2 "$R2\bin"
+  ReadRegStr $R2 HKCU "Software\${MANUFACTURER}\${MUI_PRODUCT}" ""
   StrCmp $R2 $INSTDIR HKCU admin
 HKCU:
   StrCpy $baseRegKey "HKCU"
   Goto Done
 admin:
-  ReadRegStr $R2 HKLM "Software\${MANUFACTURER}\${PRODUCT_REG_VER}" ""
-  StrCpy $R2 "$R2\bin"
+  ReadRegStr $R2 HKLM "Software\${MANUFACTURER}\${MUI_PRODUCT}" ""
   StrCmp $R2 $INSTDIR HKLM cant_find_installation
 HKLM:
   StrCpy $baseRegKey "HKLM"
@@ -1384,7 +1413,7 @@ HKLM:
 
 cant_find_installation:
 ; compare installdir with default user location
-  ${UnStrStr} $R0 $INSTDIR "$LOCALAPPDATA\${MANUFACTURER}"
+  ${UnStrStr} $R0 $INSTDIR "$LOCALAPPDATA\${MUI_PRODUCT}"
   StrCmp $R0 $INSTDIR HKCU 0
 
 ; compare installdir with default admin location
@@ -1425,7 +1454,6 @@ Function un.onInit
   Call un.UninstallFeedback
 
 ; Uninstallation was run from installation dir?
-  IfFileExists "$INSTDIR\IdeaWin64.dll" 0 end_of_uninstall
   IfFileExists "$INSTDIR\${PRODUCT_EXE_FILE}" 0 end_of_uninstall
 
 get_reg_key:
@@ -1612,7 +1640,7 @@ FunctionEnd
 Function un.getPath
 ; The function read lines from idea.properties and search the substring and prepare the path to settings or caches.
   ClearErrors
-  FileOpen $3 $INSTDIR\bin\idea.properties r
+  FileOpen $3 $INSTDIR\${FULL_BUILD_NUMBER}\bin\idea.properties r
   IfErrors complete ;file can not be open. not sure if a message should be displayed in this case.
   StrLen $5 $1
 read_line:
@@ -1684,18 +1712,16 @@ Section "Uninstall"
   SetRegView 32
   DetailPrint "baseRegKey: $baseRegKey"
   StrCpy $0 $baseRegKey
-  StrCpy $1 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}"
+  StrCpy $1 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}"
   StrCpy $2 "InstallLocation"
   Call un.OMReadRegStr
   DetailPrint "uninstall location: $3"
   ;check if the uninstalled application is running
   Call un.checkIfIDEInUse
-  ; Uninstaller is in the \bin directory, we need upper level dir
   StrCpy $productDir $INSTDIR
-  StrCpy $INSTDIR $INSTDIR\..
 
   StrCpy $0 $baseRegKey
-  StrCpy $1 "Software\${MANUFACTURER}\${PRODUCT_REG_VER}"
+  StrCpy $1 "Software\${MANUFACTURER}\${MUI_PRODUCT}"
   StrCpy $2 "MenuFolder"
   call un.OMReadRegStr
   StrCmp $3 "" delete_caches shortcuts
@@ -1729,45 +1755,33 @@ delete_caches:
 
 delete_settings:
   !insertmacro INSTALLOPTIONS_READ $R3 "DeleteSettings.ini" "Field 5" "State"
-  StrCmp $R3 1 0 delete_rider_tools
+  StrCmp $R3 1 0 continue_uninstall
   ; find the path to settings (config) folder
   StrCpy $0 "$APPDATA\${MANUFACTURER}\${PRODUCT_PATHS_SELECTOR}"
   StrCpy $1 "idea.config.path="
   Call un.getPath
-  StrCmp $2 "" delete_rider_tools
+  StrCmp $2 "" continue_uninstall
   StrCpy $config_path $2
   RmDir /r "$config_path"
-  Delete "$INSTDIR\bin\${PRODUCT_VM_OPTIONS_NAME}"
-  Delete "$INSTDIR\bin\idea.properties"
-  StrCmp $R2 1 "" delete_rider_tools
+  Delete "$INSTDIR\${FULL_BUILD_NUMBER}\bin\${PRODUCT_VM_OPTIONS_NAME}"
+  Delete "$INSTDIR\${FULL_BUILD_NUMBER}\bin\idea.properties"
+  StrCmp $R2 1 "" continue_uninstall
   RmDir "$config_path\\.." ; remove parent of config dir if the dir is empty
-
-delete_rider_tools:
-  ${UnStrStr} $R0 "${MUI_PRODUCT}" "JetBrains Rider"
-  StrCmp $R0 "${MUI_PRODUCT}" 0 continue_uninstall
-  !insertmacro INSTALLOPTIONS_READ $R3 "DeleteSettings.ini" "Field 7" "State"
-  StrCmp $R3 1 "" continue_uninstall
-  IfFileExists "$LOCALAPPDATA\${MANUFACTURER}\BuildTools\*.*" 0 +2
-  RmDir /r "$LOCALAPPDATA\${MANUFACTURER}\BuildTools"
-  IfFileExists "$LOCALAPPDATA\${MANUFACTURER}\jdk8\*.*" 0 +2
-  RmDir /r "$LOCALAPPDATA\${MANUFACTURER}\jdk8"
 
 continue_uninstall:
   ${If} $baseRegKey == "HKLM"
     SetShellVarContext all
   ${EndIf}
   ; delete uninstaller itself
-  Delete "$INSTDIR\bin\Uninstall.exe"
-  Delete "$INSTDIR\jre64\bin\server\classes.jsa"
-  Delete "$INSTDIR\jbr\bin\server\classes.jsa"
+  Delete "$INSTDIR\Uninstall.exe"
 
   Push "Complete"
-  Push "$INSTDIR\bin\${PRODUCT_EXE_FILE}.vmoptions"
-  Push "$INSTDIR\bin\idea.properties"
+  Push "$INSTDIR\${FULL_BUILD_NUMBER}\bin\${PRODUCT_EXE_FILE}.vmoptions"
+  Push "$INSTDIR\${FULL_BUILD_NUMBER}\bin\idea.properties"
   Call un.compareFileInstallationTime
   ${If} $9 != "Modified"
-    Delete "$INSTDIR\bin\idea.properties"
-    Delete "$INSTDIR\bin\${PRODUCT_EXE_FILE}.vmoptions"
+    Delete "$INSTDIR\${FULL_BUILD_NUMBER}\bin\idea.properties"
+    Delete "$INSTDIR\${FULL_BUILD_NUMBER}\bin\${PRODUCT_EXE_FILE}.vmoptions"
   ${EndIf}
   !include "unidea_win.nsh"
   StrCpy $0 "$INSTDIR\bin"
@@ -1808,7 +1822,7 @@ loop:
 
 finish_uninstall:
   StrCpy $0 $baseRegKey
-  StrCpy $1 "$5\${PRODUCT_REG_VER}"
+  StrCpy $1 "$5\${MUI_PRODUCT}"
   StrCpy $4 0
 
 getValue:
@@ -1822,7 +1836,7 @@ delValue:
   goto getValue
 
 finish:
-  StrCpy $1 "$5\${PRODUCT_REG_VER}"
+  StrCpy $1 "$5\${MUI_PRODUCT}"
   Call un.OMDeleteRegKeyIfEmpty
   StrCpy $1 "$5"
   Call un.OMDeleteRegKeyIfEmpty
@@ -1853,7 +1867,7 @@ remove_IntelliJIdeaProjectFile:
   Call un.OMDeleteRegKey
 done:
   StrCpy $0 $baseRegKey
-  StrCpy $1 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_WITH_VER}"
+  StrCpy $1 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}"
   Call un.OMDeleteRegKey
   ;do not show feedback web page checkbox for EAP builds.
   StrCmp "${PRODUCT_WITH_VER}" "${MUI_PRODUCT} ${VER_BUILD}" end_of_uninstall feedback_web_page

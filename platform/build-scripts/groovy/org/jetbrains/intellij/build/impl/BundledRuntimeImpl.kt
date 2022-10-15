@@ -218,6 +218,14 @@ class BundledRuntimeImpl(private val context: CompilationContext) : BundledRunti
     }
     return executableFilesPatterns
   }
+
+  override fun getJbrVersion(): String {
+    val split = build.split('b')
+    if (split.size != 2) {
+      throw IllegalArgumentException("$build doesn't match '<update>b<build_number>' format (e.g.: 17.0.2b387.1)")
+    }
+    return split[0]
+  }
 }
 
 private fun getArchSuffix(arch: JvmArchitecture): String {
