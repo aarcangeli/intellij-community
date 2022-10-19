@@ -92,6 +92,15 @@ public class FormatOnSaveActionInfo extends FormatOnSaveActionInfoBase<FormatOnS
     for (LanguageCodeStyleSettingsProvider provider : LanguageCodeStyleSettingsProvider.getSettingsPagesProviders()) {
       ContainerUtil.addIfNotNull(result, provider.getLanguage().getAssociatedFileType());
     }
+
+    // Romolo hack: add custom file types
+    String[] languages = {"romolo.lang.cpp", "romolo.lang.csharp"};
+    for (String language : languages) {
+      Language lang = Language.findLanguageByID(language);
+      if (lang != null) {
+        ContainerUtil.addIfNotNull(result, lang.getAssociatedFileType());
+      }
+    }
   }
 
   private @Nullable DropDownLink<String> createChangedLinesDropDownLink() {
